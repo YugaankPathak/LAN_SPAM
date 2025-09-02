@@ -1,0 +1,8 @@
+From: alice@example.local
+To: bob@example.local
+Subject: Meeting tomorrow
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+Let's meet at 10.
