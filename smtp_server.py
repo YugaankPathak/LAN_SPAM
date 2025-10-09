@@ -6,9 +6,12 @@ from aiosmtpd.controller import Controller
 from email import policy
 from email.parser import BytesParser
 from pathlib import Path
+import joblib
 
 OUT_DIR = Path("received_mails")
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+pipeline = joblib.load("spam_filter.joblib")
+
 
 def detect_host(prefer_lan=True):
     # If user provided SMTP_HOST env var, use that directly
@@ -39,12 +42,26 @@ class SaveHandler:
             from_addr = msg.get("From", "")
             to_addr = msg.get("To", "")
             ts = time.strftime("%Y%m%dT%H%M%S")
+
             subj_part = "".join(c if c.isalnum() or c in "-_." else "_" for c in subject)[:50] or "no_subject"
+
+            # Extract body text
+            body = msg.get_body(preferencelist=('plain', 'html'))
+            body_text = body.get_content() if body else ""
+
+            # Combine subject + body
+            text_for_prediction = subject + " " + body_text
+
+            # FIX: pass as list
+            pred = pipeline.predict([text_for_prediction])[0]
+
             filename = OUT_DIR / f"{ts}_{subj_part}.eml"
             with open(filename, "wb") as f:
                 f.write(envelope.content)
-            print(f"[{ts}] FROM={from_addr} TO={to_addr} SUBJECT={subject!r} saved->{filename}")
+
+            print(f"[{ts}] FROM={from_addr} TO={to_addr} SUBJECT={subject!r} saved->{filename}. Pred={pred}")
             return "250 Message accepted for delivery"
+
         except Exception as e:
             print("Error handling message:", e)
             return "451 Requested action aborted: local error in processing"
