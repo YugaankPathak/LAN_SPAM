@@ -4,7 +4,7 @@ import os
 from email.message import EmailMessage
 import time
 
-SMTP_HOST = os.environ.get("SMTP_HOST", "192.168.29.61")
+SMTP_HOST = os.environ.get("SMTP_HOST", "192.168.31.155")
 SMTP_PORT = int(os.environ.get("SMTP_PORT", 1025))
 
 def send_email(from_addr, to_addr, subject, body):
