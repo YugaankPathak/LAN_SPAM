@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+  mail_gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: mail_gateway
+    ports:
+      - "1025:1025"
+    volumes:
+      - maildata:/app/received_mails
+    networks:
+      - lan_net
+
+  alice_client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: alice_ui
+    environment:
+      - SMTP_HOST=mail_gateway
+      - SMTP_PORT=1025
+      - USER_NAME=Alice
+    ports:
+      - "8501:8501"
+    volumes:
+      - maildata:/app/received_mails
+    networks:
+      - lan_net
+
+  bob_client:
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    container_name: bob_ui
+    environment:
+      - SMTP_HOST=mail_gateway
+      - SMTP_PORT=1025
+      - USER_NAME=Bob
+    ports:
+      - "8502:8501"
+    volumes:
+      - maildata:/app/received_mails
+    networks:
+      - lan_net
+
+  external_sender:
+    build:
+      context: .
+      dockerfile: Dockerfile.sender
+    container_name: external_sender
+    # NOT connected to lan_net — isolated network
+    networks:
+      - external_net
+    environment:
+      - SMTP_HOST=host.docker.internal
+      - SMTP_PORT=1025
+
+volumes:
+  maildata:
+
+networks:
+  lan_net:
+    driver: bridge
+  external_net:
+    driver: bridge
